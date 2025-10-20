@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "=== 🚀 PREPARANDO AMBIENTE GigaLearnCPP (Python 3.11 + CUDA 12.8) ==="
+echo "=== 🚀 INICIANDO PREPARAÇÃO DO AMBIENTE GigaLearnCPP ==="
 
-# ==============================
-# VARIÁVEIS DE AMBIENTE
-# ==============================
+# ----------------------------
+# VARIÁVEIS PRINCIPAIS
+# ----------------------------
 REPO="brenohv/GigaLearnCPP-Leak"
 APP_ROOT="/app"
 REPO_DIR="$APP_ROOT/GigaLearnCPP-Leak"
@@ -15,44 +15,49 @@ LIBTORCH_TMP="/tmp/libtorch.zip"
 GIT_USER_NAME="brenohv"
 GIT_USER_EMAIL="brenohenriquev8@gmail.com"
 
-# ==============================
-# 1️⃣ ATUALIZAR PACOTES DO SISTEMA
-# ==============================
+# ----------------------------
+# AJUSTE DE DNS E REDE
+# ----------------------------
+echo "🔍 Verificando conectividade de rede..."
+if ! ping -c 1 8.8.8.8 &>/dev/null; then
+    echo "⚠️  Sem acesso à internet. Tentando novamente em 5s..."
+    sleep 5
+fi
+
+if ! ping -c 1 8.8.8.8 &>/dev/null; then
+    echo "❌ Sem conexão com a internet. Verifique a rede do container."
+    exit 1
+fi
+
+if ! ping -c 1 github.com &>/dev/null; then
+    echo "⚠️ DNS parece quebrado. Corrigindo..."
+    echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    echo "✅ DNS corrigido!"
+fi
+
+# ----------------------------
+# PACOTES BASE
+# ----------------------------
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y && apt-get install -y --no-install-recommends \
-    software-properties-common \
-    build-essential \
-    cmake \
-    git \
-    wget \
-    unzip \
-    ca-certificates \
-    rsync \
-    curl
+echo "📦 Instalando dependências principais..."
+apt-get update -y
+apt-get install -y build-essential cmake git wget unzip python3.11 python3.11-dev python3-pip ca-certificates rsync
 
-# ==============================
-# 2️⃣ INSTALAR PYTHON 3.11 E DEFINIR COMO PADRÃO
-# ==============================
-echo "➡️ Instalando Python 3.11..."
-add-apt-repository ppa:deadsnakes/ppa -y
-apt-get update -y && apt-get install -y python3.11 python3.11-dev python3.11-distutils python3-pip
+# ----------------------------
+# DEFINIR PYTHON 3.11 COMO PADRÃO
+# ----------------------------
+update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+python3 -m pip install --upgrade pip
 
-update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1 || true
-update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 2
-update-alternatives --set python3 /usr/bin/python3.11
+# ----------------------------
+# INSTALAR PACOTES PYTHON
+# ----------------------------
+echo "🐍 Instalando pacotes Python..."
+python3 -m pip install wandb pydantic_core
 
-python3 --version
-python3 -m pip install --upgrade pip setuptools wheel
-
-# ==============================
-# 3️⃣ INSTALAR DEPENDÊNCIAS PYTHON
-# ==============================
-echo "➡️ Instalando dependências Python..."
-python3 -m pip install --upgrade wandb pydantic pydantic_core
-
-# ==============================
-# 4️⃣ CONFIGURAÇÃO GIT
-# ==============================
+# ----------------------------
+# CONFIGURAÇÃO GIT
+# ----------------------------
 git config --global user.name "$GIT_USER_NAME"
 git config --global user.email "$GIT_USER_EMAIL"
 git config --global init.defaultBranch main
@@ -60,22 +65,22 @@ git config --global init.defaultBranch main
 mkdir -p "$APP_ROOT"
 cd "$APP_ROOT"
 
-# ==============================
-# 5️⃣ CLONAR OU ATUALIZAR REPOSITÓRIO PRIVADO
-# ==============================
 if [ -z "${GITHUB_TOKEN:-}" ]; then
-    echo "❌ ERRO: GITHUB_TOKEN não definido. Configure em Environment Variables."
+    echo "❌ ERRO: GITHUB_TOKEN não definido. Configure-o nas Environment Variables do Vast.ai."
     exit 1
 fi
 
+# ----------------------------
+# CLONAR OU ATUALIZAR REPOSITÓRIO
+# ----------------------------
 if [ -d "$REPO_DIR/.git" ]; then
-    echo "🔁 Repositório já existe, atualizando..."
+    echo "📁 Repositório já existe, atualizando..."
     cd "$REPO_DIR"
     git config --global --add safe.directory "$REPO_DIR"
     git pull --rebase origin main || true
     git submodule update --init --recursive || true
 else
-    echo "📥 Clonando repositório..."
+    echo "📥 Clonando repositório privado..."
     git clone --recurse-submodules "https://${GITHUB_TOKEN}@github.com/${REPO}.git" "$REPO_DIR"
     cd "$REPO_DIR"
     git submodule update --init --recursive || true
@@ -83,25 +88,23 @@ fi
 
 git remote set-url origin "https://${GITHUB_TOKEN}@github.com/${REPO}.git"
 
-# ==============================
-# 6️⃣ BAIXAR E CONFIGURAR LIBTORCH
-# ==============================
+# ----------------------------
+# LIBTORCH CONFIG
+# ----------------------------
 mkdir -p "$GIGA_DIR"
 cd "$GIGA_DIR"
-
-echo "⬇️ Baixando LibTorch..."
+echo "⬇️  Baixando libtorch (CUDA 12.8)..."
 wget -q -O "$LIBTORCH_TMP" "$LIBTORCH_URL"
-
 rm -rf "$GIGA_DIR/libtorch"
 unzip -q "$LIBTORCH_TMP" -d "$GIGA_DIR"
 rm -f "$LIBTORCH_TMP"
 
-# ==============================
-# 7️⃣ FINALIZAÇÃO
-# ==============================
-echo "✅ Setup completo!"
-echo "Versão Python ativa: $(python3 --version)"
-echo "Pacotes instalados:"
-python3 -m pip list | grep -E "wandb|pydantic"
-
-echo "=== 🚀 Ambiente pronto para compilar o GigaLearnCPP ==="
+# ----------------------------
+# FINALIZAÇÃO
+# ----------------------------
+echo ""
+echo "✅ SETUP CONCLUÍDO COM SUCESSO!"
+echo "📂 Repositório: $REPO_DIR"
+echo "⚙️  libtorch instalada em: $GIGA_DIR/libtorch"
+echo "🐍 Python: $(python3 --version)"
+echo "🌐 Conectividade confirmada com GitHub."
