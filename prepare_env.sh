@@ -8,7 +8,7 @@ REPO="brenohv/GigaLearnCPP-Leak"
 APP_ROOT="/app"
 REPO_DIR="$APP_ROOT/GigaLearnCPP-Leak"
 GIGA_DIR="$REPO_DIR/GigaLearnCPP"
-LIBTORCH_URL="https://download.pytorch.org/libtorch/cu128/libtorch-shared-with-deps-2.9.0%2Bcu128.zip"
+LIBTORCH_URL="https://download.pytorch.org/libtorch/cu130/libtorch-shared-with-deps-2.9.0%2Bcu130.zip"
 LIBTORCH_TMP="/tmp/libtorch.zip"
 
 # ===== 1. PACOTES DO SISTEMA =====
