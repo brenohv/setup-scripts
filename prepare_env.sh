@@ -77,6 +77,18 @@ else
     exit 1
 fi
 
+# ===== 8. PREPARAR DIRETÓRIO DE BUILD =====
+cd "$GIGA_DIR"
+mkdir -p build
+cd build
+
+echo "🔨 Configurando CMake..."
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+      -DPython_EXECUTABLE=/usr/bin/python3.11 \
+      -DPython_INCLUDE_DIR=/usr/include/python3.11 \
+      -DPython_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.11.so \
+      ..
+
 echo ""
 echo "============================================"
 echo "✅ SETUP COMPLETO!"
@@ -84,10 +96,8 @@ echo "============================================"
 echo "Repositório: $REPO_DIR"
 echo "libtorch: $GIGA_DIR/libtorch"
 echo "Python usado: $(python3 --version)"
+echo "Diretório atual: $(pwd)"
 echo ""
-echo "📋 Próximos passos:"
-echo "  cd $GIGA_DIR"
-echo "  rm -rf build && mkdir build && cd build"
-echo "  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .."
+echo "📋 Próximo passo:"
 echo "  make -j\$(nproc)"
 echo "============================================"
