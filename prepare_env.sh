@@ -1,6 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-
 echo "=== 🚀 INICIANDO PREPARAÇÃO DO AMBIENTE GigaLearnCPP ==="
 
 # ===== VARIÁVEIS =====
@@ -15,7 +14,9 @@ LIBTORCH_TMP="/tmp/libtorch.zip"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y --no-install-recommends \
-    build-essential cmake git wget unzip python3.11 python3.11-dev python3-pip ca-certificates rsync
+    build-essential cmake git wget unzip \
+    python3.11 python3.11-dev python3.11-venv \
+    python3-pip ca-certificates rsync
 
 # ===== 2. DEFINIR PYTHON 3.11 COMO PADRÃO =====
 update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 || true
@@ -23,6 +24,14 @@ python3 -m pip install --upgrade pip
 
 # ===== 3. INSTALAR PACOTES PYTHON =====
 python3 -m pip install wandb pydantic-core
+
+# ===== 3.1. CONFIGURAR WANDB =====
+if [ -n "${WANDB_API_KEY:-}" ]; then
+    echo "🔑 Configurando wandb..."
+    wandb login "$WANDB_API_KEY"
+else
+    echo "⚠️  WANDB_API_KEY não definido. Configure para usar wandb."
+fi
 
 # ===== 4. CRIAR DIRETÓRIO BASE =====
 mkdir -p "$APP_ROOT"
@@ -42,6 +51,7 @@ if [ -d "$REPO_DIR/.git" ]; then
     git submodule update --init --recursive || true
 else
     echo "📦 Clonando repositório privado..."
+    git clone --recurse-submodules "https://oauth2:${GITHUB_TOKEN}@github.com/${REPO}.git" "$REPO_DIR" 2>&1 | grep -v "oauth2" || \
     git clone --recurse-submodules "https://${GITHUB_TOKEN}@github.com/${REPO}.git" "$REPO_DIR"
     cd "$REPO_DIR"
     git submodule update --init --recursive || true
@@ -50,7 +60,11 @@ fi
 # ===== 6. BAIXAR E CONFIGURAR LIBTORCH =====
 mkdir -p "$GIGA_DIR"
 cd "$GIGA_DIR"
+
+echo "📥 Baixando libtorch..."
 wget -q -O "$LIBTORCH_TMP" "$LIBTORCH_URL"
+
+echo "📦 Extraindo libtorch..."
 rm -rf "$GIGA_DIR/libtorch"
 unzip -q "$LIBTORCH_TMP" -d "$GIGA_DIR"
 rm -f "$LIBTORCH_TMP"
@@ -63,7 +77,17 @@ else
     exit 1
 fi
 
-echo "✅ Setup completo!"
+echo ""
+echo "============================================"
+echo "✅ SETUP COMPLETO!"
+echo "============================================"
 echo "Repositório: $REPO_DIR"
 echo "libtorch: $GIGA_DIR/libtorch"
 echo "Python usado: $(python3 --version)"
+echo ""
+echo "📋 Próximos passos:"
+echo "  cd $GIGA_DIR"
+echo "  rm -rf build && mkdir build && cd build"
+echo "  cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .."
+echo "  make -j\$(nproc)"
+echo "============================================"
