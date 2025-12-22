@@ -78,7 +78,7 @@ else
 fi
 
 # ===== 8. PREPARAR DIRETÓRIO DE BUILD =====
-cd "$GIGA_DIR"
+cd "$REPO_DIR"
 mkdir -p build
 cd build
 
