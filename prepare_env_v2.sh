@@ -5,7 +5,7 @@ echo "=== 🚀 INICIANDO PREPARAÇÃO DO AMBIENTE GigaLearnCPP ==="
 # ===== VARIÁVEIS =====
 REPO="brenohv/GigaLearnCPP-V2"
 APP_ROOT="/app"
-REPO_DIR="$APP_ROOT/GigaLearnCPP-V2" 
+REPO_DIR="$APP_ROOT/GigaLearnCPP-Leak"
 GIGA_DIR="$REPO_DIR/GigaLearnCPP"
 LIBTORCH_URL="https://download.pytorch.org/libtorch/cu130/libtorch-shared-with-deps-2.9.0%2Bcu130.zip"
 LIBTORCH_TMP="/tmp/libtorch.zip"
